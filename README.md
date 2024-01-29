@@ -4,7 +4,13 @@
 
 ## Overview
 
-js-skybox-mapping is a demo project showcasing how to wrap a flat texture image file onto a 3D skybox using Three.js. The project currently supports multiple cubemap layouts (3x2, 3x4 etc) and does the unwrapping by manually assigning the UV coordinates. 
+js-skybox-mapping is a demo project showcasing how to wrap a flat texture image file onto a 3D skybox using Three.js. The project currently supports multiple cubemap layouts (3x2, 3x4 etc) and supports two mapping methods:
+
+1. **UV Mapping:**  This method involves manually assigning UV coordinates to accurately map the texture onto the skybox faces.
+
+2. **Material Array:** With this approach, each face of the skybox gets its own material. Use this method if you plan on adding video texture to the skybox
+
+ 
 
 ## Cubemap and Skybox
 
@@ -24,11 +30,10 @@ A skybox is a method used in computer graphics to create the illusion of a vast 
 ## Features
 
 - Mapping any cubemap layout onto a cube skybox
-- Uses manual UV mapping
+- Multiple mapping methods - Manual UV Mapping and Assigning Material Array
 
 ## Planned Features
 
-- Mapping by assigning multiple textures to the skybox material
 - Support for video texture
 - Support for Spherical textures
 

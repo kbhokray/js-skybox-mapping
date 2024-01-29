@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { GUI } from "dat.gui";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as cube from "./cube";
+import { MAPPING_METHOD } from "../constants";
 
 class Geometry {
   constructor(name, variants, meshHandler) {
@@ -23,6 +24,7 @@ const settings = {
   AutoRotate: false,
   CameraPositionZ: 5,
   ViewFromInside: false,
+  MappingMethod: MAPPING_METHOD.UVMapping,
 };
 
 const sceneContainer = document.getElementById("scene-container");
@@ -73,12 +75,21 @@ export function animate() {
   renderer.render(scene, camera);
 }
 
-function setupScene() {
+async function setupScene() {
   scene.clear();
+  camera.position.x = 0;
+  camera.position.y = 0;
   camera.position.z = settings.CameraPositionZ;
 
   const geo = settings.Geometry;
-  mesh = geo.meshHandler.getMesh(settings.Variant);
+  try {
+    mesh = await geo.meshHandler.getMesh(
+      settings.Variant,
+      settings.MappingMethod,
+    );
+  } catch (err) {
+    return;
+  }
 
   if (!mesh) {
     return;
@@ -130,13 +141,18 @@ gui
   .name("View From Inside")
   .onChange((v) => {
     if (v) {
-      settings.CameraPositionZ = 0.01;
+      settings.CameraPositionZ = 0.1;
     } else {
       settings.CameraPositionZ = 5;
     }
     setupScene();
   });
-
+gui
+  .add(settings, "MappingMethod", MAPPING_METHOD)
+  .name("Mapping Method")
+  .onChange(() => {
+    setupScene();
+  });
 gui
   .add(settings, "AutoRotate")
   .name("Auto Rotate")
