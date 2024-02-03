@@ -1,8 +1,33 @@
 import * as THREE from "three";
 import { GUI } from "dat.gui";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import Toastify from "toastify-js";
 import * as cube from "./cube";
-import { MAPPING_METHOD } from "../constants";
+import { MAPPING_METHOD, TEXTURETYPE } from "../constants";
+import "toastify-js/src/toastify.css";
+
+const toast = Toastify({
+  text: "Some error occured",
+  duration: 3000,
+  close: true,
+  gravity: "top", // `top` or `bottom`
+  position: "center", // `left`, `center` or `right`
+  stopOnFocus: true, // Prevents dismissing of toast on hover
+  style: {
+    background: "linear-gradient(to right, #00b09b, #96c93d)",
+  },
+});
+
+const TOAST_LEVELS = {
+  SUCCESS: {
+    defaultMessage: "Success!",
+    color: "green",
+  },
+  ERROR: {
+    defaultMessage: "Something went wrong!",
+    color: "red",
+  },
+};
 
 class Geometry {
   constructor(name, variants, meshHandler) {
@@ -22,15 +47,16 @@ const settings = {
   Variant: GEOMETRIES.Cube.variants.CubeMap2x3,
   VariantName: "",
   AutoRotate: false,
-  CameraPositionZ: 5,
+  CameraPositionX: 5,
   ViewFromInside: false,
-  MappingMethod: MAPPING_METHOD.UVMapping,
+  MappingMethod: MAPPING_METHOD.MaterialArray,
 };
 
 const sceneContainer = document.getElementById("scene-container");
 const sceneRect = sceneContainer.getBoundingClientRect();
 
 const textureImg = document.getElementById("texture-image");
+const textureVid = document.getElementById("texture-video");
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -75,19 +101,69 @@ export function animate() {
   renderer.render(scene, camera);
 }
 
+function showToast(message, toastLevel = TOAST_LEVELS.ERROR) {
+  toast.options.text = message || toastLevel.defaultMessage;
+  toast.showToast();
+}
 async function setupScene() {
   scene.clear();
-  camera.position.x = 0;
+  if (!(textureImg instanceof HTMLImageElement)) {
+    console.error("Texture img element not found");
+    showToast("Texture img element not found");
+  }
+  if (!(textureVid instanceof HTMLVideoElement)) {
+    console.error("Texture video element not found");
+    showToast("Texture video element not found");
+  }
+
+  camera.position.z = 0;
   camera.position.y = 0;
-  camera.position.z = settings.CameraPositionZ;
+  camera.position.x = settings.CameraPositionX;
+
+  const { textureFile, textureType } = settings.Variant;
+  let textureElem = null;
+  if (textureType === TEXTURETYPE.Image) {
+    textureVid.style.display = "none";
+    textureImg.style.display = "initial";
+    textureImg.src = textureFile;
+    try {
+      await new Promise((resolve, reject) => {
+        textureImg.onload = resolve;
+        textureImg.onerror = reject;
+      });
+    } catch (err) {
+      console.error("Cannot load image", err);
+      showToast("Cannot load image");
+      return;
+    }
+    textureElem = textureImg;
+  } else {
+    textureImg.style.display = "none";
+    textureVid.src = textureFile;
+    textureVid.style.display = "initial";
+    try {
+      await new Promise((resolve, reject) => {
+        textureVid.onloadedmetadata = resolve;
+        textureVid.onerror = reject;
+      });
+    } catch (err) {
+      console.error("Cannot load video", err);
+      showToast("Cannot load video");
+      return;
+    }
+    textureElem = textureVid;
+  }
 
   const geo = settings.Geometry;
   try {
     mesh = await geo.meshHandler.getMesh(
       settings.Variant,
       settings.MappingMethod,
+      textureElem,
     );
   } catch (err) {
+    console.error("Error constructing mesh", err);
+    showToast(err.message);
     return;
   }
 
@@ -96,9 +172,6 @@ async function setupScene() {
   }
 
   scene.add(mesh);
-
-  const { textureFile } = settings.Variant;
-  textureImg.src = textureFile;
 
   animate();
 }
@@ -141,9 +214,9 @@ gui
   .name("View From Inside")
   .onChange((v) => {
     if (v) {
-      settings.CameraPositionZ = 0.1;
+      settings.CameraPositionX = 0.1;
     } else {
-      settings.CameraPositionZ = 5;
+      settings.CameraPositionX = 5;
     }
     setupScene();
   });
