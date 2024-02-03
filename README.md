@@ -30,11 +30,11 @@ A skybox is a method used in computer graphics to create the illusion of a vast 
 ## Features
 
 - Mapping any cubemap layout onto a cube skybox
+- Supports video textures as well
 - Multiple mapping methods - Manual UV Mapping and Assigning Material Array
 
 ## Planned Features
 
-- Support for video texture
 - Support for Spherical textures
 
 ## Getting Started
